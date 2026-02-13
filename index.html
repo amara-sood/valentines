@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>💌 Valentine</title>
+  <style>
+    :root{
+      --bg1:#fff7fb; --bg2:#f7fbff; --bg3:#fffdf7;
+      --ink:#1f2937; --muted:#6b7280;
+      --card:#ffffffcc; --shadow:0 18px 45px rgba(0,0,0,.12);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; height:100svh; overflow:hidden; color:var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background:
+        radial-gradient(1200px 700px at 20% 10%, #ffd1e8 0%, transparent 60%),
+        radial-gradient(1000px 600px at 80% 20%, #cfe8ff 0%, transparent 55%),
+        linear-gradient(180deg, var(--bg1), #ffffff);
+    }
+
+    /* Screens */
+    .screen{
+      position:absolute; inset:0;
+      display:grid; place-items:center;
+      padding:24px;
+      opacity:0; pointer-events:none;
+      transform: translateY(10px);
+      transition: opacity .5s ease, transform .5s ease;
+    }
+    .screen.active{ opacity:1; pointer-events:auto; transform: translateY(0); }
+
+    .card{
+      width:min(640px, 100%);
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.7);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 26px 22px;
+      text-align:center;
+      position:relative;
+    }
+    h1{ margin:0 0 6px; font-size: clamp(26px, 3.5vw, 42px); letter-spacing:-.02em; }
+    p{ margin: 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
+
+    /* Overlay expand */
+    .expandOverlay{
+      position:fixed; inset:0; z-index:50;
+      background: radial-gradient(900px 600px at 50% 40%,
+        rgba(255,200,230,.85) 0%, rgba(255,255,255,.92) 55%, rgba(255,255,255,1) 100%);
+      opacity:0; pointer-events:none;
+      transition: opacity .45s ease;
+    }
+    .expandOverlay.show{ opacity:1; pointer-events:auto; }
+
+    /* Buttons */
+    .controls{ display:flex; gap:12px; justify-content:center; margin-top:16px; flex-wrap:wrap; }
+    .btn{
+      border: 1px solid rgba(0,0,0,.08);
+      background:#ffffff;
+      padding: 10px 14px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-weight: 700;
+      transition: transform .2s ease;
+    }
+    .btn:active{ transform: scale(.98); }
+    .tiny{ margin-top: 10px; font-size: 12px; color: var(--muted); }
+
+    /* Bouquet button (image) */
+    .bouquetWrap{ margin-top: 18px; display:grid; place-items:center; gap: 10px; }
+    .tapHint{ font-size: 13px; color: var(--muted); }
+    .bouquetBtn{
+      width: 230px; height: 230px;
+      border-radius: 999px;
+      border: 0;
+      cursor:pointer;
+      background: radial-gradient(circle at 30% 25%, #ffe4f2 0%, #ffffff 60%);
+      box-shadow: 0 20px 55px rgba(0,0,0,.18);
+      transition: transform .25s ease, box-shadow .25s ease;
+      display:grid; place-items:center;
+      overflow:hidden;
+    }
+    .bouquetBtn:hover{ transform: translateY(-2px) scale(1.02); }
+    .bouquetBtn:active{ transform: scale(.98); }
+
+    .bouquetImg{
+      width: 86%;
+      height: auto;
+      max-height: 86%;
+      object-fit: contain;
+      filter: drop-shadow(0 18px 20px rgba(0,0,0,.18));
+      border-radius: 18px;
+    }
+    /* If image fails to load, show fallback emoji */
+    .bouquetFallback{
+      font-size:64px;
+      display:none;
+    }
+
+    /* Envelope button */
+    .iconBtn{
+      width: 230px; height: 170px;
+      border-radius: 22px; border: 0; cursor:pointer;
+      background: linear-gradient(180deg, #ffffff, #fff1f7);
+      box-shadow: 0 20px 55px rgba(0,0,0,.16);
+      transition: transform .25s ease;
+      display:grid; place-items:center;
+      margin: 18px auto 8px;
+    }
+    .iconBtn:hover{ transform: translateY(-2px); }
+    .iconBtn:active{ transform: scale(.98); }
+
+    .envelope{ width: 140px; height: 95px; position: relative; }
+    .env-body{
+      position:absolute; inset: 14px 0 0 0;
+      background: #ffffff;
+      border: 2px solid rgba(0,0,0,.08);
+      border-radius: 14px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.08);
+    }
+    .env-flap{
+      position:absolute; left:0; right:0; top:0;
+      height: 62px;
+      background: linear-gradient(180deg, #ffd1e8, #ffb9d8);
+      clip-path: polygon(0 0, 100% 0, 50% 80%);
+      border-radius: 14px 14px 0 0;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,.12));
+    }
+    .heart{ position:absolute; left:50%; top:50%; transform: translate(-50%,-20%); font-size: 28px; }
+
+    /* Letter page */
+    .paper{
+      width:min(760px, 100%);
+      text-align:left;
+      padding: 28px 22px;
+      background: rgba(255,255,255,.95);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(0,0,0,.06);
+    }
+    .paper h2{ margin:0 0 10px; font-size: 22px; letter-spacing:-.01em; text-align:center; }
+    .meta{ display:flex; justify-content:space-between; color:var(--muted); font-size: 12px; margin-bottom: 14px; gap:10px; }
+    .letter{
+      font-family: "Georgia", serif;
+      font-size: 16px;
+      line-height: 1.85;
+      color: #111827;
+      white-space: pre-wrap;
+    }
+
+    /* Escaping "No" button positioning inside card */
+    .noAbs{ position:absolute !important; }
+
+    /* Small note */
+    .note{ margin-top:10px; font-size:12px; color:var(--muted); }
+
+    @media (max-width: 420px){
+      .bouquetBtn{ width: 210px; height: 210px; }
+      .iconBtn{ width: 210px; height: 160px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="expandOverlay" id="overlay"></div>
+
+  <!-- Screen 0: Valentine Question -->
+  <section class="screen active" id="s0">
+    <div class="card" id="qCard">
+      <h1>Will you be my Valentine? 💘</h1>
+      <p>Choose wisely.</p>
+
+      <div class="controls" style="margin-top:18px;">
+        <button class="btn" id="yesBtn">Yes 💗</button>
+        <button class="btn" id="noBtn">No 🙄</button>
+      </div>
+
+      <div class="tiny">(Try clicking “No” 😉)</div>
+    </div>
+  </section>
+
+  <!-- Screen 1: Bouquet -->
+  <section class="screen" id="s1">
+    <div class="card">
+      <h1>Happy Valentine’s 💗</h1>
+      <p>Click hon the bouquet to receive your flowers (dw next time i'll get you real ones i promise).</p>
+
+      <div class="bouquetWrap">
+        <button class="bouquetBtn" id="bouquetBtn" aria-label="Open bouquet">
+          <!-- Put an image named bouquet.jpg or bouquet.png in the SAME folder as this file -->
+          <img class="bouquetImg" id="bouquetImg" src="bouquet.jpg" alt="Bouquet"
+               onerror="this.style.display='none';document.getElementById('bouquetFallback').style.display='block';">
+          <div class="bouquetFallback" id="bouquetFallback">💐</div>
+        </button>
+        <div class="tapHint">Tap to open</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screen 2: Envelope -->
+  <section class="screen" id="s2" style="background: linear-gradient(180deg, var(--bg2), #ffffff);">
+    <div class="card">
+      <h1>One more thing…</h1>
+      <p>Tap the letter.</p>
+
+      <button class="iconBtn" id="envelopeBtn" aria-label="Open letter">
+        <div class="envelope">
+          <div class="env-flap"></div>
+          <div class="env-body"></div>
+          <div class="heart">💌</div>
+        </div>
+      </button>
+
+      <div class="tiny">love you nemo</div>
+    </div>
+  </section>
+
+  <!-- Screen 3: Letter text -->
+  <section class="screen" id="s3" style="background: linear-gradient(180deg, var(--bg3), #ffffff);">
+    <div class="paper">
+      <h2>My Letter to You</h2>
+      <div class="meta">
+        <span id="toLine">To: Baby</span>
+        <span id="dateLine"></span>
+      </div>
+
+      <div class="letter" id="letterText">Hi baby,
+
+How are you doing? It’s been a while no 
+
+Dw I still love you more than anything else (and always will). 
+
+I wanted to do something special for you on Valentine’s day not just cause of the hype behind it but because I just wanted to let you know how grateful I am for you. So, thank you:
+- For patiently listening to me when I’m upset
+- For always picking up late at night when I’m drunk and all I wanna do is talk to you 
+- For fighting for us
+- For being my best friend even before my boyfriend
+- For always being the one place I can find peace no matter what is going on 
+- For keeping me on my toes (haha)
+
+There’s so many more but I can’t give you such a fat ego boost 
+
+Mwah I love you bubs
+
+— Amara</div>
+
+      <div class="controls">
+        <button class="btn" id="backToStart">↩ Start over</button>
+        <button class="btn" id="copyBtn">📋 Copy letter</button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const overlay = document.getElementById('overlay');
+
+    const s0 = document.getElementById('s0');
+    const s1 = document.getElementById('s1');
+    const s2 = document.getElementById('s2');
+    const s3 = document.getElementById('s3');
+
+    const yesBtn = document.getElementById('yesBtn');
+    const noBtn = document.getElementById('noBtn');
+
+    const bouquetBtn = document.getElementById('bouquetBtn');
+    const envelopeBtn = document.getElementById('envelopeBtn');
+    const backToStart = document.getElementById('backToStart');
+    const copyBtn = document.getElementById('copyBtn');
+
+    // Date
+    const dateLine = document.getElementById('dateLine');
+    const now = new Date();
+    dateLine.textContent = now.toLocaleDateString(undefined, { year:'numeric', month:'long', day:'numeric' });
+
+    function show(screen){
+      [s0, s1, s2, s3].forEach(el => el.classList.remove('active'));
+      screen.classList.add('active');
+    }
+
+    // Flow
+    yesBtn.addEventListener('click', () => show(s1));
+
+    // "No" escapes inside the card
+    function moveNoButton(){
+      const card = noBtn.closest('.card');
+      const cardRect = card.getBoundingClientRect();
+
+      // Ensure absolute positioning in card
+      card.style.position = "relative";
+      noBtn.classList.add("noAbs");
+
+      // Measure button size after absolute is applied
+      const btnRect = noBtn.getBoundingClientRect();
+
+      const padding = 14;
+      const maxX = Math.max(padding, cardRect.width - btnRect.width - padding);
+      const maxY = Math.max(padding, cardRect.height - btnRect.height - padding);
+
+      // Avoid covering title area by keeping y a bit lower
+      const minY = 90;
+
+      const x = Math.floor(Math.random() * (maxX - padding + 1)) + padding;
+      const y = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
+
+      noBtn.style.left = x + "px";
+      noBtn.style.top = y + "px";
+    }
+
+    noBtn.addEventListener('mouseenter', moveNoButton);
+    noBtn.addEventListener('click', (e) => { e.preventDefault(); moveNoButton(); });
+    noBtn.addEventListener('touchstart', (e) => { e.preventDefault(); moveNoButton(); }, {passive:false});
+
+    // Bouquet "expand" then go to envelope
+    bouquetBtn.addEventListener('click', () => {
+      overlay.classList.add('show');
+      setTimeout(() => {
+        overlay.classList.remove('show');
+        show(s2);
+      }, 520);
+    });
+
+    // Envelope to letter
+    envelopeBtn.addEventListener('click', () => show(s3));
+
+    // Back to start
+    backToStart.addEventListener('click', () => show(s0));
+
+    // Copy letter
+    copyBtn.addEventListener('click', async () => {
+      const text = document.getElementById('letterText').innerText.trim();
+      try{
+        await navigator.clipboard.writeText(text);
+        copyBtn.textContent = "✅ Copied";
+        setTimeout(() => copyBtn.textContent = "📋 Copy letter", 1200);
+      }catch(e){
+        alert("Copy didn’t work here—select the text and copy manually.");
+      }
+    });
+  </script>
+</body>
+</html>
